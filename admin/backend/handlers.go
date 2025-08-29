@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -108,6 +109,17 @@ func (s *Server) queryLogs(c *gin.Context) {
 
 	if traceID := c.Query("trace_id"); traceID != "" {
 		filter["trace_id"] = traceID
+	}
+
+	// Metadata 过滤
+	for key, values := range c.Request.URL.Query() {
+		if strings.HasPrefix(key, "metadata_filters[") && strings.HasSuffix(key, "]") {
+			// 提取metadata字段名，如: metadata_filters[user_id] -> user_id
+			metadataKey := strings.TrimSuffix(strings.TrimPrefix(key, "metadata_filters["), "]")
+			if metadataKey != "" && len(values) > 0 && values[0] != "" {
+				filter["metadata."+metadataKey] = values[0]
+			}
+		}
 	}
 
 	// 时间范围过滤

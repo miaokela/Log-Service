@@ -147,3 +147,99 @@
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
 }
+
+/* 表格行交替色 */
+.table-row-light {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.table-row-dark {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.table-row-light:hover,
+.table-row-dark:hover {
+  background: rgba(0, 217, 255, 0.1) !important;
+}
+
+/* 元数据标签优化 */
+.metadata-tags {
+  max-height: 80px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.metadata-tags::-webkit-scrollbar {
+  width: 4px;
+}
+
+.metadata-tags::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.metadata-tags::-webkit-scrollbar-thumb {
+  background: rgba(0, 217, 255, 0.5);
+  border-radius: 2px;
+}
+
+/* 搜索表单优化 */
+.search-section {
+  margin-bottom: 16px;
+}
+
+.filter-section {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 217, 255, 0.1);
+  margin: 16px 0;
+}
+
+/* Tooltip 样式 */
+.ant-tooltip-inner {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border: 1px solid rgba(0, 217, 255, 0.3) !important;
+  color: #00d9ff !important;
+}
+
+.ant-tooltip-arrow-content {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border: 1px solid rgba(0, 217, 255, 0.3) !important;
+}
+
+/* 标签样式增强 */
+.ant-tag {
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+/* 分页器样式 */
+.ant-pagination {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-pagination-item {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(0, 217, 255, 0.3) !important;
+}
+
+.ant-pagination-item a {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-pagination-item-active {
+  background: rgba(0, 217, 255, 0.2) !important;
+  border-color: #00d9ff !important;
+}
+
+.ant-pagination-item-active a {
+  color: #00d9ff !important;
+}
+
+/* 表格固定列样式 */
+.ant-table-cell-fix-left,
+.ant-table-cell-fix-right {
+  background: rgba(255, 255, 255, 0.08) !important;
+}

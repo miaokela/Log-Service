@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin 系统测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #00d9ff;
+        }
+        h1, h2 {
+            color: #00d9ff;
+        }
+        .log-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 3px solid #00d9ff;
+        }
+        .metadata {
+            background: rgba(0, 217, 255, 0.1);
+            padding: 5px;
+            margin-top: 5px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        button {
+            background: linear-gradient(45deg, #00d9ff, #0099cc);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 217, 255, 0.3);
+        }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Admin 系统功能测试</h1>
+        
+        <div class="test-section">
+            <h2>📊 系统状态</h2>
+            <button onclick="testHealth()">测试健康检查</button>
+            <button onclick="testStats()">获取统计数据</button>
+            <div id="status-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Metadata 搜索测试</h2>
+            <p>测试新的 Metadata 过滤功能：</p>
+            <button onclick="testMetadataFilter('user_id', '12345')">按 user_id=12345 搜索</button>
+            <button onclick="testMetadataFilter('order_id', 'ORD-67890')">按 order_id=ORD-67890 搜索</button>
+            <button onclick="testMetadataFilter('gateway', 'alipay')">按 gateway=alipay 搜索</button>
+            <button onclick="testAllLogs()">显示所有日志</button>
+            <div id="search-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 创建测试日志</h2>
+            <button onclick="createTestLog()">创建带 Metadata 的测试日志</button>
+            <div id="create-results"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                document.getElementById('status-results').innerHTML = 
+                    `<div class="log-item">✅ 健康检查: ${JSON.stringify(data)}</div>`;
+            } catch (error) {
+                document.getElementById('status-results').innerHTML = 
+                    `<div class="log-item">❌ 健康检查失败: ${error.message}</div>`;
+            }
+        }
+
+        async function testStats() {
+            try {
+                const response = await fetch(`${API_BASE}/api/stats/`);
+                const data = await response.json();
+                document.getElementById('status-results').innerHTML = 
+                    `<div class="log-item">📊 统计数据: <pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            } catch (error) {
+                document.getElementById('status-results').innerHTML = 
+                    `<div class="log-item">❌ 获取统计失败: ${error.message}</div>`;
+            }
+        }
+
+        async function testMetadataFilter(key, value) {
+            try {
+                const url = `${API_BASE}/api/logs/?metadata_filters%5B${key}%5D=${value}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                let html = `<div class="log-item">
+                    <strong>🔍 按 ${key}=${value} 搜索结果 (共 ${data.total} 条):</strong>`;
+                
+                if (data.logs && data.logs.length > 0) {
+                    data.logs.forEach(log => {
+                        html += `<div class="log-item">
+                            <strong>[${log.level}] ${log.service_name}</strong>: ${log.message}
+                            <div class="metadata">Metadata: ${JSON.stringify(log.metadata)}</div>
+                            <small>时间: ${new Date(log.timestamp).toLocaleString()}</small>
+                        </div>`;
+                    });
+                } else {
+                    html += '<p>未找到匹配的日志</p>';
+                }
+                
+                html += '</div>';
+                document.getElementById('search-results').innerHTML = html;
+            } catch (error) {
+                document.getElementById('search-results').innerHTML = 
+                    `<div class="log-item">❌ 搜索失败: ${error.message}</div>`;
+            }
+        }
+
+        async function testAllLogs() {
+            try {
+                const response = await fetch(`${API_BASE}/api/logs/`);
+                const data = await response.json();
+                
+                let html = `<div class="log-item">
+                    <strong>📋 所有日志 (共 ${data.total} 条):</strong>`;
+                
+                if (data.logs && data.logs.length > 0) {
+                    data.logs.forEach(log => {
+                        html += `<div class="log-item">
+                            <strong>[${log.level}] ${log.service_name}</strong>: ${log.message}
+                            <div class="metadata">Metadata: ${JSON.stringify(log.metadata)}</div>
+                            <small>时间: ${new Date(log.timestamp).toLocaleString()}</small>
+                        </div>`;
+                    });
+                } else {
+                    html += '<p>没有日志数据</p>';
+                }
+                
+                html += '</div>';
+                document.getElementById('search-results').innerHTML = html;
+            } catch (error) {
+                document.getElementById('search-results').innerHTML = 
+                    `<div class="log-item">❌ 获取日志失败: ${error.message}</div>`;
+            }
+        }
+
+        async function createTestLog() {
+            try {
+                const testLog = {
+                    service_name: 'test-service',
+                    level: 'INFO',
+                    message: '测试日志 - ' + new Date().toLocaleString(),
+                    metadata: {
+                        test_id: 'TEST-' + Date.now(),
+                        user_id: '12345',
+                        feature: 'metadata_search',
+                        browser: navigator.userAgent.split(' ')[0]
+                    }
+                };
+
+                const response = await fetch(`${API_BASE}/api/logs/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testLog)
+                });
+
+                const data = await response.json();
+                document.getElementById('create-results').innerHTML = 
+                    `<div class="log-item">✅ 创建成功: <pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            } catch (error) {
+                document.getElementById('create-results').innerHTML = 
+                    `<div class="log-item">❌ 创建失败: ${error.message}</div>`;
+            }
+        }
+
+        // 页面加载时自动测试
+        window.onload = function() {
+            testHealth();
+            setTimeout(testStats, 1000);
+        };
+    </script>
+</body>
+</html>
