@@ -190,27 +190,44 @@ const LogQuery: React.FC = () => {
     );
   };
 
-  const handleSearch = useCallback(async (values?: any) => {
+  // 表单提交处理函数
+  const handleFormSubmit = (values: any) => {
+    setCurrent(1); // 重置到第一页
+    
+    // 在表单提交时处理metadata过滤器
+    const params: any = {
+      limit: pageSize,
+      offset: 0, // 重置到第一页，所以offset是0
+      ...values
+    };
+
+    // 处理时间范围
+    if (values?.dateRange) {
+      params.start_time = values.dateRange[0].toISOString();
+      params.end_time = values.dateRange[1].toISOString();
+    }
+
+    // 处理metadata过滤器 - 使用当前的metadataFilters状态
+    const validMetadataFilters = metadataFilters.filter(filter => filter.key && filter.value);
+    validMetadataFilters.forEach(filter => {
+      let cleanValue = filter.value;
+      // 如果值包含 "key: value" 格式，只取value部分
+      if (cleanValue.includes(': ') && cleanValue.startsWith(filter.key + ': ')) {
+        cleanValue = cleanValue.substring(filter.key.length + 2).trim();
+      }
+      params[`metadata_filters[${filter.key}]`] = cleanValue;
+    });
+
+    console.log('搜索参数:', params); // 添加调试日志
+    
+    // 执行搜索
+    executeSearch(params);
+  };
+
+  // 执行搜索的函数
+  const executeSearch = useCallback(async (params: any) => {
     try {
       setLoading(true);
-      const params: any = {
-        limit: pageSize,
-        offset: (current - 1) * pageSize,
-        ...values
-      };
-
-      // 处理时间范围
-      if (values?.dateRange) {
-        params.start_time = values.dateRange[0].toISOString();
-        params.end_time = values.dateRange[1].toISOString();
-      }
-
-      // 处理metadata过滤器
-      const validMetadataFilters = metadataFilters.filter(filter => filter.key && filter.value);
-      validMetadataFilters.forEach(filter => {
-        params[`metadata_filters[${filter.key}]`] = filter.value;
-      });
-
       const response = await axios.get('/api/logs/', { params });
       setLogs(response.data.logs || []);
       setTotal(response.data.total || 0);
@@ -220,17 +237,59 @@ const LogQuery: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [pageSize, current, metadataFilters]);
+  }, []);
+
+  const handleSearch = useCallback(async (values?: any) => {
+    const params: any = {
+      limit: pageSize,
+      offset: (current - 1) * pageSize,
+      ...values
+    };
+
+    // 处理时间范围
+    if (values?.dateRange) {
+      params.start_time = values.dateRange[0].toISOString();
+      params.end_time = values.dateRange[1].toISOString();
+    }
+
+    // 不在这里处理metadata过滤器，因为这个函数用于分页等其他场景
+    await executeSearch(params);
+  }, [pageSize, current, executeSearch]);
+
+  // 初始加载函数
+  const loadInitialData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params: any = {
+        limit: pageSize,
+        offset: (current - 1) * pageSize
+      };
+
+      const response = await axios.get('/api/logs/', { params });
+      setLogs(response.data.logs || []);
+      setTotal(response.data.total || 0);
+    } catch (error) {
+      console.error('加载失败:', error);
+      message.error('加载失败，请稍后重试');
+    } finally {
+      setLoading(false);
+    }
+  }, [pageSize, current]);
 
   useEffect(() => {
-    handleSearch();
-  }, [handleSearch]);
+    loadInitialData();
+  }, [loadInitialData]);
 
   const handleReset = () => {
     form.resetFields();
     setMetadataFilters([{ key: '', value: '' }]);
     setCurrent(1);
-    handleSearch();
+    // 重置时执行基本搜索，不包含任何过滤条件
+    const params = {
+      limit: pageSize,
+      offset: 0
+    };
+    executeSearch(params);
   };
 
   const handleTableChange = (pagination: any) => {
@@ -249,7 +308,19 @@ const LogQuery: React.FC = () => {
 
   const updateMetadataFilter = (index: number, field: 'key' | 'value', value: string) => {
     const newFilters = [...metadataFilters];
-    newFilters[index][field] = value;
+    
+    // 如果是在value字段粘贴了 "key: value" 格式的内容，自动分离
+    if (field === 'value' && value.includes(': ') && !newFilters[index].key) {
+      const colonIndex = value.indexOf(': ');
+      const key = value.substring(0, colonIndex).trim();
+      const actualValue = value.substring(colonIndex + 2).trim();
+      
+      newFilters[index].key = key;
+      newFilters[index].value = actualValue;
+    } else {
+      newFilters[index][field] = value;
+    }
+    
     setMetadataFilters(newFilters);
   };
 
@@ -428,7 +499,7 @@ const LogQuery: React.FC = () => {
         <Form
           form={form}
           layout="vertical"
-          onFinish={handleSearch}
+          onFinish={handleFormSubmit}
         >
           {/* 基础搜索条件 */}
           <Row gutter={[16, 16]}>
