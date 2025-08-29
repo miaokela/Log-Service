@@ -1,0 +1,7 @@
+2025/08/29 14:35:55 Log service starting on port 50051
+2025/08/29 14:35:55 MongoDB URI: mongodb://localhost:27017
+2025/08/29 14:35:55 Database: log_service
+2025/08/29 14:44:29 Successfully flushed 100 logs to storage
+2025/08/29 14:44:30 Successfully flushed 5 logs to storage
+2025/08/29 14:45:30 Successfully flushed 6 logs to storage
+2025/08/29 14:45:40 Successfully flushed 50 logs to storage

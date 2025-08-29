@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package logservice;
+
+option go_package = "./proto";
+
+// LogLevel 枚举定义日志级别
+enum LogLevel {
+  DEBUG = 0;
+  INFO = 1;
+  WARN = 2;
+  ERROR = 3;
+  FATAL = 4;
+}
+
+// LogEntry 日志条目
+message LogEntry {
+  string id = 1;
+  string service_name = 2;
+  LogLevel level = 3;
+  string message = 4;
+  string timestamp = 5;
+  map<string, string> metadata = 6;
+  string trace_id = 7;
+  string span_id = 8;
+}
+
+// WriteLogRequest 写入日志请求
+message WriteLogRequest {
+  LogEntry log_entry = 1;
+}
+
+// WriteLogResponse 写入日志响应
+message WriteLogResponse {
+  bool success = 1;
+  string error_message = 2;
+  string log_id = 3;
+}
+
+// QueryLogRequest 查询日志请求
+message QueryLogRequest {
+  string service_name = 1;
+  LogLevel level = 2;
+  string start_time = 3;
+  string end_time = 4;
+  map<string, string> metadata_filters = 5;
+  string trace_id = 6;
+  int32 limit = 7;
+  int32 offset = 8;
+}
+
+// QueryLogResponse 查询日志响应
+message QueryLogResponse {
+  repeated LogEntry logs = 1;
+  int32 total_count = 2;
+  bool success = 3;
+  string error_message = 4;
+}
+
+// BatchWriteLogRequest 批量写入日志请求
+message BatchWriteLogRequest {
+  repeated LogEntry log_entries = 1;
+}
+
+// BatchWriteLogResponse 批量写入日志响应
+message BatchWriteLogResponse {
+  bool success = 1;
+  string error_message = 2;
+  repeated string log_ids = 3;
+}
+
+// LogService 日志服务定义
+service LogService {
+  // WriteLog 写入单条日志
+  rpc WriteLog(WriteLogRequest) returns (WriteLogResponse);
+  
+  // BatchWriteLog 批量写入日志
+  rpc BatchWriteLog(BatchWriteLogRequest) returns (BatchWriteLogResponse);
+  
+  // QueryLog 查询日志
+  rpc QueryLog(QueryLogRequest) returns (QueryLogResponse);
+}
