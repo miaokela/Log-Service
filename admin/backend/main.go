@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -13,9 +14,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// StatsCache 统计信息缓存
+type StatsCache struct {
+	Data      StatsResponse
+	ExpiresAt time.Time
+	mu        sync.RWMutex
+}
+
 type Server struct {
-	db     *mongo.Database
-	router *gin.Engine
+	db         *mongo.Database
+	router     *gin.Engine
+	statsCache *StatsCache
 }
 
 func main() {
@@ -45,8 +54,9 @@ func main() {
 
 	// 创建服务器实例
 	server := &Server{
-		db:     db,
-		router: gin.Default(),
+		db:         db,
+		router:     gin.Default(),
+		statsCache: &StatsCache{},
 	}
 
 	// 配置CORS
@@ -85,6 +95,15 @@ func (s *Server) setupRoutes() {
 		stats := api.Group("/stats")
 		{
 			stats.GET("/", s.getStats)
+		}
+
+		// 索引管理接口
+		indexes := api.Group("/indexes")
+		{
+			indexes.GET("/", s.getIndexes)
+			indexes.POST("/", s.createIndex)
+			indexes.DELETE("/:name", s.deleteIndex)
+			indexes.GET("/stats", s.getIndexStats)
 		}
 	}
 

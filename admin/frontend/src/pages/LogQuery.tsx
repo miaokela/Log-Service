@@ -84,7 +84,7 @@ const LogQuery: React.FC = () => {
         params[`metadata_filters[${filter.key}]`] = filter.value;
       });
 
-      const response = await axios.get('/api/logs', { params });
+      const response = await axios.get('/api/logs/', { params });
       setLogs(response.data.logs || []);
       setTotal(response.data.total || 0);
     } catch (error) {

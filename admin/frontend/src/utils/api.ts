@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 配置axios默认设置
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
+  baseURL: process.env.REACT_APP_API_URL || '',
   timeout: 10000,
 });
 

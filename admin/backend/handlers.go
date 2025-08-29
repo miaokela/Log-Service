@@ -27,6 +27,35 @@ type LogEntry struct {
 	SpanID      string             `json:"span_id" bson:"span_id"`
 }
 
+// IndexInfo 索引信息结构
+type IndexInfo struct {
+	Name       string                 `json:"name"`
+	Key        map[string]interface{} `json:"key"`
+	Unique     bool                   `json:"unique,omitempty"`
+	Background bool                   `json:"background,omitempty"`
+	Sparse     bool                   `json:"sparse,omitempty"`
+	Size       int64                  `json:"size,omitempty"`
+	Version    int                    `json:"version,omitempty"`
+}
+
+// CreateIndexRequest 创建索引请求结构
+type CreateIndexRequest struct {
+	Name       string                 `json:"name" binding:"required"`
+	Key        map[string]interface{} `json:"key" binding:"required"`
+	Unique     bool                   `json:"unique,omitempty"`
+	Background bool                   `json:"background,omitempty"`
+	Sparse     bool                   `json:"sparse,omitempty"`
+}
+
+// IndexStats 索引统计信息
+type IndexStats struct {
+	TotalIndexes   int     `json:"total_indexes"`
+	TotalIndexSize int64   `json:"total_index_size"`
+	CollectionSize int64   `json:"collection_size"`
+	DocumentCount  int64   `json:"document_count"`
+	AvgObjSize     float64 `json:"avg_obj_size"`
+}
+
 // LogEntryResponse 日志条目响应结构（用于API返回，level转换为字符串）
 type LogEntryResponse struct {
 	ID          primitive.ObjectID `json:"id"`
@@ -305,107 +334,414 @@ func (s *Server) deleteLog(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Log deleted successfully"})
 }
 
-// getStats 获取统计信息
+// getStats 获取统计信息 - 带缓存的高性能版本
 func (s *Server) getStats(c *gin.Context) {
+	// 检查缓存
+	s.statsCache.mu.RLock()
+	if time.Now().Before(s.statsCache.ExpiresAt) {
+		cachedStats := s.statsCache.Data
+		s.statsCache.mu.RUnlock()
+		c.JSON(http.StatusOK, cachedStats)
+		return
+	}
+	s.statsCache.mu.RUnlock()
+
+	// 缓存已过期，获取新数据
+	s.statsCache.mu.Lock()
+	defer s.statsCache.mu.Unlock()
+
+	// 双重检查，防止并发时多次计算
+	if time.Now().Before(s.statsCache.ExpiresAt) {
+		c.JSON(http.StatusOK, s.statsCache.Data)
+		return
+	}
+
 	collection := s.db.Collection("logs")
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// 总日志数
-	total, _ := collection.CountDocuments(ctx, bson.M{})
-
-	// 按级别统计
-	pipeline := []bson.M{
-		{"$group": bson.M{
-			"_id":   "$level",
-			"count": bson.M{"$sum": 1},
-		}},
-	}
-	cursor, _ := collection.Aggregate(ctx, pipeline)
-	var levelStats []bson.M
-	cursor.All(ctx, &levelStats)
-	cursor.Close(ctx)
-
-	logsByLevel := make(map[string]int64)
-	for _, stat := range levelStats {
-		var levelStr string
-
-		// level字段可能是int32或string，需要处理两种情况
-		switch id := stat["_id"].(type) {
-		case int32:
-			// 数字类型的level
-			switch id {
-			case 0:
-				levelStr = "DEBUG"
-			case 1:
-				levelStr = "INFO"
-			case 2:
-				levelStr = "WARN"
-			case 3:
-				levelStr = "ERROR"
-			case 4:
-				levelStr = "FATAL"
-			default:
-				levelStr = fmt.Sprintf("UNKNOWN_%d", id)
-			}
-		case string:
-			// 字符串类型的level，直接使用
-			levelStr = id
-		default:
-			// 其他类型，转换为字符串
-			levelStr = fmt.Sprintf("UNKNOWN_%v", id)
-		}
-
-		// count字段处理
-		var count int64
-		switch c := stat["count"].(type) {
-		case int32:
-			count = int64(c)
-		case int64:
-			count = c
-		case int:
-			count = int64(c)
-		default:
-			count = 0
-		}
-
-		// 如果已存在相同的level，累加count
-		if existing, exists := logsByLevel[levelStr]; exists {
-			logsByLevel[levelStr] = existing + count
-		} else {
-			logsByLevel[levelStr] = count
-		}
-	}
-
-	// 按服务统计
-	pipeline = []bson.M{
-		{"$group": bson.M{
-			"_id":   "$service_name",
-			"count": bson.M{"$sum": 1},
-		}},
-	}
-	cursor, _ = collection.Aggregate(ctx, pipeline)
-	var serviceStats []bson.M
-	cursor.All(ctx, &serviceStats)
-	cursor.Close(ctx)
-
-	logsByService := make(map[string]int64)
-	for _, stat := range serviceStats {
-		service := stat["_id"].(string)
-		count := stat["count"].(int32)
-		logsByService[service] = int64(count)
-	}
-
-	// 最近24小时
 	yesterday := time.Now().Add(-24 * time.Hour)
+
+	// 对于大数据集，使用采样来加速统计
+	// 首先快速获取总数
+	totalLogs, err := collection.EstimatedDocumentCount(ctx)
+	if err != nil {
+		// 如果估算失败，使用精确计数
+		totalLogs, _ = collection.CountDocuments(ctx, bson.M{})
+	}
+
+	// 如果数据量太大（超过100万），使用采样策略
+	useSampling := totalLogs > 1000000
+	sampleSize := int64(10000) // 采样1万条记录进行统计
+
+	var pipeline []bson.M
+
+	if useSampling {
+		// 使用随机采样
+		pipeline = []bson.M{
+			{"$sample": bson.M{"size": sampleSize}},
+			{"$facet": bson.M{
+				"levelStats": []bson.M{
+					{"$group": bson.M{
+						"_id":   "$level",
+						"count": bson.M{"$sum": 1},
+					}},
+				},
+				"serviceStats": []bson.M{
+					{"$group": bson.M{
+						"_id":   "$service_name",
+						"count": bson.M{"$sum": 1},
+					}},
+				},
+			}},
+		}
+	} else {
+		// 数据量较小，使用完整数据
+		pipeline = []bson.M{
+			{"$facet": bson.M{
+				"levelStats": []bson.M{
+					{"$group": bson.M{
+						"_id":   "$level",
+						"count": bson.M{"$sum": 1},
+					}},
+				},
+				"serviceStats": []bson.M{
+					{"$group": bson.M{
+						"_id":   "$service_name",
+						"count": bson.M{"$sum": 1},
+					}},
+				},
+			}},
+		}
+	}
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get stats: " + err.Error()})
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var results []bson.M
+	if err := cursor.All(ctx, &results); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse stats: " + err.Error()})
+		return
+	}
+
+	// 单独快速查询最近24小时的数据
 	recent24h, _ := collection.CountDocuments(ctx, bson.M{
 		"timestamp": bson.M{"$gte": yesterday},
 	})
 
+	if len(results) == 0 {
+		stats := StatsResponse{
+			TotalLogs:     totalLogs,
+			LogsByLevel:   make(map[string]int64),
+			LogsByService: make(map[string]int64),
+			Recent24h:     recent24h,
+		}
+		// 缓存结果，缓存1分钟
+		s.statsCache.Data = stats
+		s.statsCache.ExpiresAt = time.Now().Add(1 * time.Minute)
+		c.JSON(http.StatusOK, stats)
+		return
+	}
+
+	result := results[0]
+
+	// 计算缩放比例（如果使用了采样）
+	scaleFactor := float64(1)
+	if useSampling && sampleSize > 0 {
+		scaleFactor = float64(totalLogs) / float64(sampleSize)
+	}
+
+	// 处理按级别统计
+	logsByLevel := make(map[string]int64)
+	if levelStatsArr, ok := result["levelStats"]; ok {
+		// 处理primitive.A类型
+		if levelStatsSlice, ok := levelStatsArr.(primitive.A); ok {
+			for _, levelStat := range levelStatsSlice {
+				if stat, ok := levelStat.(primitive.M); ok {
+					var levelStr string
+					// level字段可能是int32或string，需要处理两种情况
+					switch id := stat["_id"].(type) {
+					case int32:
+						// 数字类型的level
+						switch id {
+						case 0:
+							levelStr = "DEBUG"
+						case 1:
+							levelStr = "INFO"
+						case 2:
+							levelStr = "WARN"
+						case 3:
+							levelStr = "ERROR"
+						case 4:
+							levelStr = "FATAL"
+						default:
+							levelStr = fmt.Sprintf("UNKNOWN_%d", id)
+						}
+					case string:
+						levelStr = id
+					case nil:
+						levelStr = "NULL"
+					default:
+						levelStr = fmt.Sprintf("UNKNOWN_%v", id)
+					}
+
+					// count字段处理并应用缩放
+					var count int64
+					switch c := stat["count"].(type) {
+					case int32:
+						count = int64(float64(c) * scaleFactor)
+					case int64:
+						count = int64(float64(c) * scaleFactor)
+					case int:
+						count = int64(float64(c) * scaleFactor)
+					default:
+						count = 0
+					}
+
+					if existing, exists := logsByLevel[levelStr]; exists {
+						logsByLevel[levelStr] = existing + count
+					} else {
+						logsByLevel[levelStr] = count
+					}
+				}
+			}
+		}
+	}
+
+	// 处理按服务统计
+	logsByService := make(map[string]int64)
+	if serviceStatsArr, ok := result["serviceStats"]; ok {
+		// 处理primitive.A类型
+		if serviceStatsSlice, ok := serviceStatsArr.(primitive.A); ok {
+			for _, serviceStat := range serviceStatsSlice {
+				if stat, ok := serviceStat.(primitive.M); ok {
+					serviceName := ""
+					if svc, ok := stat["_id"]; ok && svc != nil {
+						serviceName = fmt.Sprintf("%v", svc)
+					} else {
+						serviceName = "UNKNOWN"
+					}
+
+					// count字段处理并应用缩放
+					var count int64
+					switch c := stat["count"].(type) {
+					case int32:
+						count = int64(float64(c) * scaleFactor)
+					case int64:
+						count = int64(float64(c) * scaleFactor)
+					case int:
+						count = int64(float64(c) * scaleFactor)
+					default:
+						count = 0
+					}
+					logsByService[serviceName] = count
+				}
+			}
+		}
+	}
+
 	stats := StatsResponse{
-		TotalLogs:     total,
+		TotalLogs:     totalLogs,
 		LogsByLevel:   logsByLevel,
 		LogsByService: logsByService,
 		Recent24h:     recent24h,
+	}
+
+	// 缓存结果，缓存1分钟
+	s.statsCache.Data = stats
+	s.statsCache.ExpiresAt = time.Now().Add(1 * time.Minute)
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// getIndexes 获取所有索引信息
+func (s *Server) getIndexes(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	collection := s.db.Collection("logs")
+
+	// 获取索引规格
+	cursor, err := collection.Indexes().List(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var indexes []IndexInfo
+	for cursor.Next(ctx) {
+		var indexSpec bson.M
+		if err := cursor.Decode(&indexSpec); err != nil {
+			continue
+		}
+
+		index := IndexInfo{
+			Name: indexSpec["name"].(string),
+			Key:  indexSpec["key"].(bson.M),
+		}
+
+		// 解析可选字段
+		if unique, ok := indexSpec["unique"].(bool); ok {
+			index.Unique = unique
+		}
+		if background, ok := indexSpec["background"].(bool); ok {
+			index.Background = background
+		}
+		if sparse, ok := indexSpec["sparse"].(bool); ok {
+			index.Sparse = sparse
+		}
+		if version, ok := indexSpec["v"].(int32); ok {
+			index.Version = int(version)
+		}
+
+		indexes = append(indexes, index)
+	}
+
+	// 获取索引统计信息
+	stats, err := collection.Database().RunCommand(ctx, bson.D{
+		{Key: "collStats", Value: "logs"},
+		{Key: "indexDetails", Value: true},
+	}).DecodeBytes()
+
+	if err == nil {
+		// 为每个索引添加大小信息
+		if indexSizes, ok := stats.Lookup("indexSizes").DocumentOK(); ok {
+			for i := range indexes {
+				if size, sizeOk := indexSizes.Lookup(indexes[i].Name).Int64OK(); sizeOk {
+					indexes[i].Size = size
+				}
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"indexes": indexes,
+		"total":   len(indexes),
+	})
+}
+
+// createIndex 创建新索引
+func (s *Server) createIndex(c *gin.Context) {
+	var req CreateIndexRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	collection := s.db.Collection("logs")
+
+	// 构建索引选项
+	indexOptions := options.Index().SetName(req.Name)
+	if req.Unique {
+		indexOptions.SetUnique(true)
+	}
+	if req.Background {
+		indexOptions.SetBackground(true)
+	}
+	if req.Sparse {
+		indexOptions.SetSparse(true)
+	}
+
+	// 创建索引模型
+	indexModel := mongo.IndexModel{
+		Keys:    req.Key,
+		Options: indexOptions,
+	}
+
+	// 创建索引
+	indexName, err := collection.Indexes().CreateOne(ctx, indexModel)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Index created successfully",
+		"index_name": indexName,
+	})
+}
+
+// deleteIndex 删除索引
+func (s *Server) deleteIndex(c *gin.Context) {
+	indexName := c.Param("name")
+	if indexName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Index name is required"})
+		return
+	}
+
+	// 防止删除_id索引
+	if indexName == "_id_" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot delete _id index"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	collection := s.db.Collection("logs")
+
+	// 删除索引
+	_, err := collection.Indexes().DropOne(ctx, indexName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Index deleted successfully",
+		"index_name": indexName,
+	})
+}
+
+// getIndexStats 获取索引统计信息
+func (s *Server) getIndexStats(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	collection := s.db.Collection("logs")
+
+	// 获取集合统计信息
+	result := collection.Database().RunCommand(ctx, bson.D{
+		{Key: "collStats", Value: "logs"},
+	})
+
+	var statsDoc bson.M
+	if err := result.Decode(&statsDoc); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 解析统计信息
+	var stats IndexStats
+
+	if count, ok := statsDoc["count"].(int32); ok {
+		stats.DocumentCount = int64(count)
+	}
+	if size, ok := statsDoc["size"].(int32); ok {
+		stats.CollectionSize = int64(size)
+	} else if size, ok := statsDoc["size"].(int64); ok {
+		stats.CollectionSize = size
+	}
+	if totalIndexSize, ok := statsDoc["totalIndexSize"].(int32); ok {
+		stats.TotalIndexSize = int64(totalIndexSize)
+	} else if totalIndexSize, ok := statsDoc["totalIndexSize"].(int64); ok {
+		stats.TotalIndexSize = totalIndexSize
+	}
+	if avgObjSize, ok := statsDoc["avgObjSize"].(float64); ok {
+		stats.AvgObjSize = avgObjSize
+	}
+
+	// 计算索引数量
+	if indexSizes, ok := statsDoc["indexSizes"].(bson.M); ok {
+		stats.TotalIndexes = len(indexSizes)
 	}
 
 	c.JSON(http.StatusOK, stats)

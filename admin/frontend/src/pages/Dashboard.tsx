@@ -41,8 +41,8 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true);
       const [statsRes, logsRes] = await Promise.all([
-        axios.get('/api/stats'),
-        axios.get('/api/logs?limit=10')
+        axios.get('/api/stats/'),
+        axios.get('/api/logs/?limit=10')
       ]);
       
       setStats(statsRes.data);

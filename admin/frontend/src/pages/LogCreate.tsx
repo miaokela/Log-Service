@@ -50,7 +50,7 @@ const LogCreate: React.FC = () => {
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined
       };
 
-      await axios.post('/api/logs', logData);
+      await axios.post('/api/logs/', logData);
       message.success('日志创建成功！');
       form.resetFields();
       setMetadataInputs([]);

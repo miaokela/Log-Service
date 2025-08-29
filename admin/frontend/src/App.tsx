@@ -6,6 +6,7 @@ import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import LogQuery from './pages/LogQuery';
 import LogCreate from './pages/LogCreate';
+import IndexManagement from './pages/IndexManagement';
 import './App.css';
 
 const { Content } = Layout;
@@ -27,6 +28,7 @@ const App: React.FC = () => {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/query" element={<LogQuery />} />
               <Route path="/create" element={<LogCreate />} />
+              <Route path="/indexes" element={<IndexManagement />} />
             </Routes>
           </div>
         </Content>

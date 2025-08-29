@@ -5,7 +5,8 @@ import {
   DashboardOutlined,
   SearchOutlined,
   PlusOutlined,
-  BugOutlined
+  BugOutlined,
+  DatabaseOutlined
 } from '@ant-design/icons';
 
 const { Sider } = Layout;
@@ -28,6 +29,11 @@ const Sidebar: React.FC = () => {
       key: '/create',
       icon: <PlusOutlined />,
       label: <Link to="/create">创建日志</Link>,
+    },
+    {
+      key: '/indexes',
+      icon: <DatabaseOutlined />,
+      label: <Link to="/indexes">索引管理</Link>,
     },
   ];
 
