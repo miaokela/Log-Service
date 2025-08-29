@@ -15,9 +15,10 @@ import {
   Tag,
   Divider,
   Tooltip,
-  Collapse
+  Collapse,
+  Popover
 } from 'antd';
-import { SearchOutlined, ReloadOutlined, PlusOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, PlusOutlined, DeleteOutlined, InfoCircleOutlined, CopyOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
@@ -62,6 +63,132 @@ const LogQuery: React.FC = () => {
   const [current, setCurrent] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [metadataFilters, setMetadataFilters] = useState<MetadataFilter[]>([{ key: '', value: '' }]);
+
+  // 复制到剪贴板的函数
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      message.success('已复制到剪贴板');
+    }).catch(err => {
+      console.error('复制失败:', err);
+      message.error('复制失败');
+    });
+  };
+
+  // 渲染metadata的Popover内容
+  const renderMetadataPopover = (metadata: Record<string, string>) => {
+    if (!metadata || Object.keys(metadata).length === 0) {
+      return (
+        <div style={{ 
+          padding: '12px', 
+          backgroundColor: '#1a1a1a', 
+          color: '#e6e6e6',
+          border: '1px solid #333',
+          borderRadius: '8px'
+        }}>
+          暂无数据
+        </div>
+      );
+    }
+
+    const metadataText = JSON.stringify(metadata, null, 2);
+    
+    return (
+      <div style={{ 
+        maxWidth: '450px', 
+        maxHeight: '350px', 
+        overflow: 'auto',
+        backgroundColor: '#1a1a1a',
+        color: '#e6e6e6',
+        padding: '16px',
+        border: '1px solid #333',
+        borderRadius: '12px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)'
+      }}>
+        <div style={{ 
+          marginBottom: '12px', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          borderBottom: '1px solid #333',
+          paddingBottom: '8px'
+        }}>
+          <strong style={{ 
+            color: '#00d4ff', 
+            fontSize: '14px',
+            textShadow: '0 0 8px rgba(0, 212, 255, 0.3)'
+          }}>
+            Metadata 详情
+          </strong>
+          <Button
+            type="text"
+            size="small"
+            icon={<CopyOutlined />}
+            onClick={() => copyToClipboard(metadataText)}
+            style={{ 
+              color: '#00d4ff',
+              background: 'rgba(0, 212, 255, 0.1)',
+              border: '1px solid rgba(0, 212, 255, 0.3)',
+              borderRadius: '6px'
+            }}
+          >
+            复制全部
+          </Button>
+        </div>
+        {Object.entries(metadata).map(([key, value]) => (
+          <div key={key} style={{ 
+            marginBottom: '8px', 
+            padding: '12px',
+            backgroundColor: '#262626',
+            borderRadius: '8px',
+            border: '1px solid #404040',
+            position: 'relative',
+            background: 'linear-gradient(135deg, #262626 0%, #1f1f1f 100%)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1, marginRight: '8px' }}>
+                <div style={{ 
+                  fontWeight: 'bold', 
+                  color: '#00d4ff', 
+                  fontSize: '12px',
+                  marginBottom: '4px',
+                  textShadow: '0 0 4px rgba(0, 212, 255, 0.2)'
+                }}>
+                  {key}
+                </div>
+                <div style={{ 
+                  wordBreak: 'break-word', 
+                  fontSize: '12px',
+                  maxHeight: '60px',
+                  overflow: 'auto',
+                  color: '#e6e6e6',
+                  backgroundColor: '#1a1a1a',
+                  padding: '6px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid #404040',
+                  fontFamily: 'Monaco, "Courier New", monospace'
+                }}>
+                  {value}
+                </div>
+              </div>
+              <Button
+                type="text"
+                size="small"
+                icon={<CopyOutlined />}
+                onClick={() => copyToClipboard(`${key}: ${value}`)}
+                style={{ 
+                  flexShrink: 0, 
+                  color: '#666',
+                  background: 'rgba(102, 102, 102, 0.1)',
+                  border: '1px solid rgba(102, 102, 102, 0.3)',
+                  borderRadius: '4px'
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const handleSearch = useCallback(async (values?: any) => {
     try {
@@ -204,29 +331,66 @@ const LogQuery: React.FC = () => {
         if (!metadata || Object.keys(metadata).length === 0) {
           return <span style={{ color: '#666' }}>-</span>;
         }
+
+        // 显示简化版本
+        const entries = Object.entries(metadata);
+        const firstEntry = entries[0];
+        const hasMore = entries.length > 1;
+
         return (
-          <div style={{ maxHeight: '80px', overflow: 'auto' }}>
-            {Object.entries(metadata).map(([key, value]) => (
-              <div key={key} style={{ marginBottom: '2px' }}>
-                <Tag 
-                  color="blue" 
-                  style={{ 
-                    fontSize: '11px', 
-                    padding: '1px 4px',
-                    marginBottom: '2px',
-                    display: 'inline-block',
-                    maxWidth: '180px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}
-                  title={`${key}: ${value}`}
-                >
-                  {key}: {value}
-                </Tag>
-              </div>
-            ))}
-          </div>
+          <Popover
+            content={renderMetadataPopover(metadata)}
+            title={null}
+            trigger="hover"
+            placement="right"
+            overlayStyle={{ maxWidth: '500px' }}
+          >
+            <div style={{ 
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              border: '1px dashed #d9d9d9',
+              transition: 'all 0.3s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#1890ff';
+              e.currentTarget.style.background = '#f0f9ff';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#d9d9d9';
+              e.currentTarget.style.background = 'transparent';
+            }}
+            >
+              <Tag 
+                color="blue" 
+                style={{ 
+                  fontSize: '11px', 
+                  padding: '1px 4px',
+                  marginBottom: '2px',
+                  display: 'inline-block',
+                  maxWidth: '150px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {firstEntry[0]}: {firstEntry[1]}
+              </Tag>
+              {hasMore && (
+                <div style={{ 
+                  fontSize: '10px', 
+                  color: '#666', 
+                  marginTop: '2px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  <InfoCircleOutlined />
+                  +{entries.length - 1} 更多
+                </div>
+              )}
+            </div>
+          </Popover>
         );
       },
     },
