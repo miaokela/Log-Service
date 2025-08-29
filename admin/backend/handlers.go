@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,12 +19,64 @@ import (
 type LogEntry struct {
 	ID          primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	ServiceName string             `json:"service_name" bson:"service_name"`
-	Level       string             `json:"level" bson:"level"`
+	Level       interface{}        `json:"level" bson:"level"`
 	Message     string             `json:"message" bson:"message"`
 	Timestamp   time.Time          `json:"timestamp" bson:"timestamp"`
 	Metadata    map[string]string  `json:"metadata" bson:"metadata"`
 	TraceID     string             `json:"trace_id" bson:"trace_id"`
 	SpanID      string             `json:"span_id" bson:"span_id"`
+}
+
+// LogEntryResponse 日志条目响应结构（用于API返回，level转换为字符串）
+type LogEntryResponse struct {
+	ID          primitive.ObjectID `json:"id"`
+	ServiceName string             `json:"service_name"`
+	Level       string             `json:"level"`
+	Message     string             `json:"message"`
+	Timestamp   time.Time          `json:"timestamp"`
+	Metadata    map[string]string  `json:"metadata"`
+	TraceID     string             `json:"trace_id"`
+	SpanID      string             `json:"span_id"`
+}
+
+// convertLevelToString 将level转换为字符串
+func convertLevelToString(level interface{}) string {
+	switch l := level.(type) {
+	case int32:
+		switch l {
+		case 0:
+			return "DEBUG"
+		case 1:
+			return "INFO"
+		case 2:
+			return "WARN"
+		case 3:
+			return "ERROR"
+		case 4:
+			return "FATAL"
+		default:
+			return fmt.Sprintf("UNKNOWN_%d", l)
+		}
+	case int:
+		switch l {
+		case 0:
+			return "DEBUG"
+		case 1:
+			return "INFO"
+		case 2:
+			return "WARN"
+		case 3:
+			return "ERROR"
+		case 4:
+			return "FATAL"
+		default:
+			return fmt.Sprintf("UNKNOWN_%d", l)
+		}
+	case string:
+		return l
+	default:
+		return fmt.Sprintf("UNKNOWN_%v", l)
+	}
 }
 
 // CreateLogRequest 创建日志请求
@@ -177,12 +230,27 @@ func (s *Server) queryLogs(c *gin.Context) {
 		return
 	}
 
-	if logs == nil {
-		logs = []LogEntry{}
+	// 转换为响应格式
+	var responseLogs []LogEntryResponse
+	for _, log := range logs {
+		responseLogs = append(responseLogs, LogEntryResponse{
+			ID:          log.ID,
+			ServiceName: log.ServiceName,
+			Level:       convertLevelToString(log.Level),
+			Message:     log.Message,
+			Timestamp:   log.Timestamp,
+			Metadata:    log.Metadata,
+			TraceID:     log.TraceID,
+			SpanID:      log.SpanID,
+		})
+	}
+
+	if responseLogs == nil {
+		responseLogs = []LogEntryResponse{}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"logs":   logs,
+		"logs":   responseLogs,
 		"total":  total,
 		"limit":  limit,
 		"offset": offset,
@@ -259,9 +327,53 @@ func (s *Server) getStats(c *gin.Context) {
 
 	logsByLevel := make(map[string]int64)
 	for _, stat := range levelStats {
-		level := stat["_id"].(string)
-		count := stat["count"].(int32)
-		logsByLevel[level] = int64(count)
+		var levelStr string
+
+		// level字段可能是int32或string，需要处理两种情况
+		switch id := stat["_id"].(type) {
+		case int32:
+			// 数字类型的level
+			switch id {
+			case 0:
+				levelStr = "DEBUG"
+			case 1:
+				levelStr = "INFO"
+			case 2:
+				levelStr = "WARN"
+			case 3:
+				levelStr = "ERROR"
+			case 4:
+				levelStr = "FATAL"
+			default:
+				levelStr = fmt.Sprintf("UNKNOWN_%d", id)
+			}
+		case string:
+			// 字符串类型的level，直接使用
+			levelStr = id
+		default:
+			// 其他类型，转换为字符串
+			levelStr = fmt.Sprintf("UNKNOWN_%v", id)
+		}
+
+		// count字段处理
+		var count int64
+		switch c := stat["count"].(type) {
+		case int32:
+			count = int64(c)
+		case int64:
+			count = c
+		case int:
+			count = int64(c)
+		default:
+			count = 0
+		}
+
+		// 如果已存在相同的level，累加count
+		if existing, exists := logsByLevel[levelStr]; exists {
+			logsByLevel[levelStr] = existing + count
+		} else {
+			logsByLevel[levelStr] = count
+		}
 	}
 
 	// 按服务统计
