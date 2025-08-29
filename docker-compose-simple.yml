@@ -52,43 +52,6 @@ services:
     volumes:
       - ./logs:/app/logs
 
-  # Admin Backend
-  admin-backend:
-    build:
-      context: ./admin/backend
-      dockerfile: Dockerfile
-    container_name: log-admin-backend
-    restart: unless-stopped
-    environment:
-      PORT: 8080
-      MONGODB_URI: mongodb://admin:password123@mongodb:27017/log_service?authSource=admin
-    ports:
-      - "8080:8080"
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    networks:
-      - log-service-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # Admin Frontend
-  admin-frontend:
-    build:
-      context: ./admin/frontend
-      dockerfile: Dockerfile
-    container_name: log-admin-frontend
-    restart: unless-stopped
-    ports:
-      - "3000:80"
-    depends_on:
-      - admin-backend
-    networks:
-      - log-service-network
-
 volumes:
   mongodb_data:
     driver: local

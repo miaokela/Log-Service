@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # MongoDB数据库
+  log-service-mongodb:
+    image: mongo:7.0
+    container_name: log-service-mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./scripts/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - log-service-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Admin后端API服务
+  admin-backend:
+    image: admin-backend
+    container_name: admin-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGODB_URI=mongodb://admin:password@log-service-mongodb:27017/log_service?authSource=admin
+    depends_on:
+      log-service-mongodb:
+        condition: service_healthy
+    networks:
+      - log-service-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Admin前端界面
+  admin-frontend:
+    image: admin-frontend
+    container_name: admin-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - admin-backend
+    networks:
+      - log-service-network
+
+volumes:
+  mongo_data:
+
+networks:
+  log-service-network:
+    driver: bridge

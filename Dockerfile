@@ -1,5 +1,22 @@
 # 使用官方Go镜像作为构建环境
-FROM golang:1.23-alpine AS builder
+FROM golang:1.21-alpine AS builder
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装protobuf编译器和相关工具
+RUN apk add --no-cache protobuf-dev
+
+# 设置Go代理
+ENV GOPROXY=https://goproxy.cn,direct
+ENV GOSUMDB=off
+
+# 复制go模块文件
+COPY go.mod go.sum ./
+
+# 下载依赖，添加重试机制  
+RUN go mod download || go mod download || go mod download环境
+FROM golang:1.21-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app

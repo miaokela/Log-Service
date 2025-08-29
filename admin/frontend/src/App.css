@@ -1,0 +1,149 @@
+.App {
+  text-align: center;
+}
+
+.ant-layout {
+  background: transparent !important;
+}
+
+.ant-layout-sider {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(0, 217, 255, 0.2);
+}
+
+.ant-layout-header {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+  padding: 0 24px;
+}
+
+.ant-menu {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ant-menu-item {
+  color: rgba(255, 255, 255, 0.8) !important;
+  margin: 8px 0 !important;
+  border-radius: 8px !important;
+}
+
+.ant-menu-item:hover {
+  background: rgba(0, 217, 255, 0.2) !important;
+  color: #00d9ff !important;
+}
+
+.ant-menu-item-selected {
+  background: rgba(0, 217, 255, 0.3) !important;
+  color: #00d9ff !important;
+}
+
+.ant-menu-item-selected::after {
+  border-color: #00d9ff !important;
+}
+
+/* 表格样式 */
+.ant-table {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background: rgba(0, 217, 255, 0.1) !important;
+  border-bottom: 1px solid rgba(0, 217, 255, 0.3) !important;
+  color: #00d9ff !important;
+  font-weight: 600;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: rgba(0, 217, 255, 0.1) !important;
+}
+
+/* 卡片样式 */
+.ant-card {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(0, 217, 255, 0.2) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(10px);
+}
+
+.ant-card-head {
+  border-bottom: 1px solid rgba(0, 217, 255, 0.2) !important;
+  background: rgba(0, 217, 255, 0.05) !important;
+}
+
+.ant-card-head-title {
+  color: #00d9ff !important;
+  font-weight: 600;
+}
+
+/* 表单样式 */
+.ant-form-item-label > label {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-input,
+.ant-select-selector,
+.ant-picker {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(0, 217, 255, 0.3) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-input:focus,
+.ant-select-focused .ant-select-selector,
+.ant-picker:hover {
+  border-color: #00d9ff !important;
+  box-shadow: 0 0 0 2px rgba(0, 217, 255, 0.2) !important;
+}
+
+/* 按钮样式 */
+.ant-btn-primary {
+  background: linear-gradient(45deg, #00d9ff, #0099cc) !important;
+  border: none !important;
+  box-shadow: 0 4px 15px 0 rgba(0, 217, 255, 0.3) !important;
+}
+
+.ant-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px 0 rgba(0, 217, 255, 0.5) !important;
+}
+
+/* 统计卡片 */
+.stat-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 217, 255, 0.2);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  border-color: rgba(0, 217, 255, 0.5);
+  box-shadow: 0 8px 25px rgba(0, 217, 255, 0.2);
+  transform: translateY(-4px);
+}
+
+.stat-number {
+  font-size: 32px;
+  font-weight: bold;
+  color: #00d9ff;
+  text-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+}
