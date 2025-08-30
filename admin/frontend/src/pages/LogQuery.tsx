@@ -425,7 +425,7 @@ const LogQuery: React.FC = () => {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = '#1890ff';
-              e.currentTarget.style.background = '#f0f9ff';
+              e.currentTarget.style.background = 'rgba(57, 136, 182, 1)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.borderColor = '#d9d9d9';
