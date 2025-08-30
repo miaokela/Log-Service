@@ -68,6 +68,138 @@
   background: rgba(0, 217, 255, 0.1) !important;
 }
 
+/* 表格斑马纹效果 */
+.ant-table-tbody > tr:nth-child(even) > td {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.ant-table-tbody > tr:nth-child(even):hover > td {
+  background: rgba(0, 217, 255, 0.1) !important;
+}
+
+/* 增强表格hover效果 - 确保覆盖所有情况 */
+.ant-table-tbody > tr:hover > td,
+.ant-table-tbody > tr.ant-table-row:hover > td,
+.ant-table-tbody > tr.ant-table-row-hover > td,
+.ant-table tr:hover > td,
+.ant-table .ant-table-tbody > tr:hover > td {
+  background: var(--tech-blue-light, rgba(0, 217, 255, 0.15)) !important;
+  color: var(--white-lighter, rgba(255, 255, 255, 0.95)) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* 奇偶行hover效果统一 */
+.ant-table-tbody > tr:nth-child(odd):hover > td,
+.ant-table-tbody > tr:nth-child(even):hover > td {
+  background: var(--tech-blue-light, rgba(0, 217, 255, 0.15)) !important;
+}
+
+/* 表格分页器 */
+.ant-table-pagination {
+  background: rgba(255, 255, 255, 0.03) !important;
+  padding: 16px !important;
+  border-top: 1px solid rgba(0, 217, 255, 0.2) !important;
+}
+
+/* 表格行选中和hover增强 */
+.ant-table-tbody > tr.ant-table-row:hover > td,
+.ant-table-tbody > tr.ant-table-row-hover > td {
+  background: rgba(0, 217, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.ant-table-tbody > tr.ant-table-row-selected > td {
+  background: rgba(0, 217, 255, 0.2) !important;
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+.ant-table-tbody > tr.ant-table-row-selected:hover > td {
+  background: rgba(0, 217, 255, 0.25) !important;
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+/* 确保单元格hover样式优先级最高 */
+.ant-table-tbody td:hover {
+  background: rgba(0, 217, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* 强制覆盖所有可能的表格hover样式 */
+.ant-table .ant-table-tbody > tr:hover,
+.ant-table .ant-table-tbody > tr:hover > td,
+.ant-table-wrapper .ant-table-tbody > tr:hover > td,
+.ant-table-container .ant-table-tbody > tr:hover > td {
+  background: rgba(0, 217, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* 处理可能的行级别hover */
+.ant-table tr:hover {
+  background: rgba(0, 217, 255, 0.15) !important;
+}
+
+/* 特殊处理表格行hover时的过渡效果 */
+.ant-table-tbody > tr {
+  transition: background-color 0.2s ease !important;
+}
+
+.ant-table-tbody > tr > td {
+  transition: background-color 0.2s ease, color 0.2s ease !important;
+}
+
+/* 最高优先级的hover样式 - 使用更具体的选择器 */
+div.ant-table-wrapper table.ant-table tbody.ant-table-tbody tr:hover > td {
+  background-color: var(--tech-blue-light, rgba(0, 217, 255, 0.15)) !important;
+  color: var(--white-lighter, rgba(255, 255, 255, 0.95)) !important;
+  border-color: rgba(0, 217, 255, 0.3) !important;
+}
+
+/* 确保表格wrapper内的hover样式 */
+.ant-table-container .ant-table-tbody tr:hover > td,
+.ant-table-content table.ant-table tbody tr:hover > td {
+  background-color: var(--tech-blue-light, rgba(0, 217, 255, 0.15)) !important;
+  color: var(--white-lighter, rgba(255, 255, 255, 0.95)) !important;
+}
+
+/* 处理表格内的所有可能的hover状态 */
+.ant-table tbody tr:hover,
+.ant-table tbody tr:hover > td,
+.ant-table-tbody tr:hover,
+.ant-table-tbody tr:hover > td {
+  background: var(--tech-blue-light, rgba(0, 217, 255, 0.15)) !important;
+  color: var(--white-lighter, rgba(255, 255, 255, 0.95)) !important;
+}
+
+/* 表格空状态样式 */
+.ant-empty {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.ant-empty-description {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* 下拉菜单样式 */
+.ant-dropdown {
+  background: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 217, 255, 0.3) !important;
+  border-radius: 8px !important;
+}
+
+.ant-dropdown-menu {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ant-dropdown-menu-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-dropdown-menu-item:hover {
+  background: rgba(0, 217, 255, 0.2) !important;
+}
+
 /* 卡片样式 */
 .ant-card {
   background: rgba(255, 255, 255, 0.08) !important;
@@ -92,17 +224,23 @@
 }
 
 .ant-input,
+.ant-input-affix-wrapper,
+.ant-input-group-addon,
+.ant-input-search,
 .ant-select-selector,
 .ant-picker {
   background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(0, 217, 255, 0.3) !important;
+  border: none !important;
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
 .ant-input:focus,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused,
+.ant-input-search:focus,
 .ant-select-focused .ant-select-selector,
 .ant-picker:hover {
-  border-color: #00d9ff !important;
+  border-color: transparent !important;
   box-shadow: 0 0 0 2px rgba(0, 217, 255, 0.2) !important;
 }
 
@@ -242,4 +380,69 @@
 .ant-table-cell-fix-left,
 .ant-table-cell-fix-right {
   background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* 全局滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 217, 255, 0.4);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 217, 255, 0.6);
+}
+
+::-webkit-scrollbar-corner {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Ant Design 表格滚动条特殊处理 */
+.ant-table-body::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.ant-table-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 3px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 217, 255, 0.5);
+  border-radius: 3px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 217, 255, 0.7);
+}
+
+/* 表格容器滚动条 */
+.ant-table-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.ant-table-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 3px;
+}
+
+.ant-table-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 217, 255, 0.5);
+  border-radius: 3px;
+}
+
+.ant-table-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 217, 255, 0.7);
 }

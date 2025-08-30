@@ -1,7 +1,7 @@
-# Production stage - 直接使用已构建的文件
+# Production stage - 使用本地构建的文件
 FROM nginx:alpine
 
-# 复制构建好的静态文件
+# 复制构建好的静态文件（由 docker-rebuild.sh 预先构建）
 COPY build/ /usr/share/nginx/html/
 
 # 复制nginx配置

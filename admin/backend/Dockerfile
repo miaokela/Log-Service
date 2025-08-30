@@ -18,7 +18,7 @@ COPY go.mod go.sum ./
 RUN go mod download || go mod download || go mod download
 
 # 复制源代码
-COPY . .
+COPY *.go ./
 
 # 构建应用
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .

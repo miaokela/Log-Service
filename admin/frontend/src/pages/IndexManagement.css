@@ -265,7 +265,7 @@
 .form-group input[type="text"] {
   width: 100%;
   padding: 10px;
-  border: 1px solid var(--border-color);
+  border: none;
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s ease;
@@ -273,7 +273,7 @@
 
 .form-group input[type="text"]:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: transparent;
   box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
 }
 

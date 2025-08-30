@@ -9,6 +9,17 @@ body {
   min-height: 100vh;
 }
 
+/* CSS变量定义 */
+:root {
+  --tech-blue: #00d9ff;
+  --tech-blue-light: rgba(0, 217, 255, 0.15);
+  --tech-blue-medium: rgba(0, 217, 255, 0.3);
+  --tech-blue-dark: rgba(0, 217, 255, 0.5);
+  --white-light: rgba(255, 255, 255, 0.85);
+  --white-lighter: rgba(255, 255, 255, 0.95);
+  --white-dark: rgba(255, 255, 255, 0.1);
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
