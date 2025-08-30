@@ -19,6 +19,7 @@ RUN go mod download || go mod download || go mod download
 
 # 复制源代码
 COPY *.go ./
+COPY config.yml ./
 
 # 构建应用
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
@@ -33,6 +34,7 @@ WORKDIR /root/
 
 # 从构建阶段复制二进制文件
 COPY --from=builder /app/main .
+COPY --from=builder /app/config.yml .
 
 # 设置时区
 ENV TZ=Asia/Shanghai

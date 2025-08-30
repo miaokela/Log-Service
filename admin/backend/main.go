@@ -28,6 +28,12 @@ type Server struct {
 }
 
 func main() {
+	// 加载配置文件
+	if err := loadConfig("config.yml"); err != nil {
+		log.Fatal("Failed to load config:", err)
+	}
+	log.Println("Config loaded successfully")
+
 	// 连接MongoDB
 	mongoURI := os.Getenv("MONGODB_URI")
 	if mongoURI == "" {
@@ -80,8 +86,23 @@ func main() {
 }
 
 func (s *Server) setupRoutes() {
-	api := s.router.Group("/api")
+	// 公开的认证接口（不需要JWT验证）
+	auth := s.router.Group("/auth")
 	{
+		auth.POST("/login", s.login)
+	}
+
+	// 需要认证的API接口
+	api := s.router.Group("/api")
+	api.Use(JWTAuthMiddleware()) // 添加JWT中间件
+	{
+		// 认证验证接口
+		auth := api.Group("/auth")
+		{
+			auth.GET("/verify", s.verifyToken)
+			auth.POST("/logout", s.logout)
+		}
+
 		// 日志相关接口
 		logs := api.Group("/logs")
 		{

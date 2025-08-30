@@ -1,0 +1,8 @@
+admin:
+  users:
+    admin: "admin123"
+    operator: "op456789"
+    viewer: "view123"
+  jwt:
+    secret: "your-super-secret-jwt-key-change-this-in-production"
+    expires_hours: 24
