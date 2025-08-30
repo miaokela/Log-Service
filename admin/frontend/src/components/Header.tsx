@@ -65,13 +65,6 @@ const Header: React.FC = () => {
         >
           刷新
         </Button>
-        <Button 
-          type="text" 
-          icon={<SettingOutlined />}
-          style={{ color: 'rgba(255, 255, 255, 0.7)' }}
-        >
-          设置
-        </Button>
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
           <Button 
             type="text" 

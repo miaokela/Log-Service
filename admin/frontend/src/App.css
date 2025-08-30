@@ -181,8 +181,8 @@ div.ant-table-wrapper table.ant-table tbody.ant-table-tbody tr:hover > td {
 
 /* 下拉菜单样式 */
 .ant-dropdown {
-  background: rgba(0, 0, 0, 0.9) !important;
-  backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(15px);
   border: 1px solid rgba(0, 217, 255, 0.3) !important;
   border-radius: 8px !important;
 }
@@ -198,6 +198,115 @@ div.ant-table-wrapper table.ant-table tbody.ant-table-tbody tr:hover > td {
 
 .ant-dropdown-menu-item:hover {
   background: rgba(0, 217, 255, 0.2) !important;
+}
+
+/* Select下拉框面板样式 */
+.ant-select-dropdown {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(0, 217, 255, 0.3) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6) !important;
+}
+
+.ant-select-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+  background: transparent !important;
+}
+
+.ant-select-item-option-selected {
+  background: rgba(0, 217, 255, 0.15) !important;
+  color: #00d9ff !important;
+}
+
+.ant-select-item-option-active {
+  background: rgba(0, 217, 255, 0.1) !important;
+}
+
+/* DatePicker下拉面板样式 */
+.ant-picker-dropdown {
+  background: rgba(0, 0, 0, 0.95) !important;
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(0, 217, 255, 0.3) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6) !important;
+}
+
+.ant-picker-panel-container {
+  background: transparent !important;
+}
+
+.ant-picker-panel {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ant-picker-header {
+  border-bottom: 1px solid rgba(0, 217, 255, 0.2) !important;
+}
+
+.ant-picker-header button {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-picker-header button:hover {
+  color: #00d9ff !important;
+  background: rgba(0, 217, 255, 0.1) !important;
+}
+
+.ant-picker-body {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-picker-cell {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-picker-cell:hover .ant-picker-cell-inner {
+  background: rgba(0, 217, 255, 0.1) !important;
+  color: #00d9ff !important;
+}
+
+.ant-picker-cell-selected .ant-picker-cell-inner {
+  background: rgba(0, 217, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.ant-picker-cell-in-range .ant-picker-cell-inner {
+  background: rgba(0, 217, 255, 0.1) !important;
+}
+
+.ant-picker-time-panel {
+  background: transparent !important;
+  border-left: 1px solid rgba(0, 217, 255, 0.2) !important;
+}
+
+.ant-picker-time-panel-column {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-picker-time-panel-cell {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-picker-time-panel-cell:hover {
+  background: rgba(0, 217, 255, 0.1) !important;
+  color: #00d9ff !important;
+}
+
+.ant-picker-time-panel-cell-selected {
+  background: rgba(0, 217, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+
+/* 输入框内部时间显示样式 */
+.ant-picker-input > input {
+  color: rgba(255, 255, 255, 0.85) !important;
+  background: transparent !important;
+}
+
+.ant-picker-input > input::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
 }
 
 /* 卡片样式 */

@@ -569,10 +569,13 @@ const LogQuery: React.FC = () => {
                 tooltip="选择日志的时间范围"
               >
                 <RangePicker 
-                  showTime 
+                  showTime={{
+                    format: 'HH:mm:ss'
+                  }}
                   style={{ width: '100%' }}
                   placeholder={['开始时间', '结束时间']}
                   format="YYYY-MM-DD HH:mm:ss"
+                  allowClear
                 />
               </Form.Item>
             </Col>
