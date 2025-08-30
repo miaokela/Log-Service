@@ -15,6 +15,8 @@
 - [x] **🆕 可视化查询**：直观的日志查询和实时统计
 - [x] **🆕 用户管理**：安全的登录系统，用户会话管理
 - [x] **🆕 响应式设计**：完美适配桌面和移动端界面
+- [x] **🆕 Django 客户端**：简化的日志写入接口，支持1万次并发测试
+- [x] **🆕 多语言支持**：Python、Django、TypeScript 多种客户端实现
 
 ## 🎯 新增功能：Admin 管理界面
 
@@ -127,6 +129,22 @@ make docker-logs
 - **日志服务 gRPC 端口**: `50051`
 - **MongoDB 端口**: `27017`
 
+### 🆕 Django 客户端服务
+
+```bash
+# 启动 Django 客户端服务
+cd clients/django
+./setup_and_run.sh
+
+# 服务端口
+# Django 开发服务器: http://127.0.0.1:8000
+```
+
+**Django 客户端 API 接口**:
+- `POST /api/write_log/` - 单条日志写入
+- `POST /api/batch_write_test/` - 批量写入测试  
+- `POST /api/concurrent_test/` - 并发写入测试 (1万次)
+
 ## 🧪 测试客户端
 
 项目包含了完整的测试客户端，演示如何使用各种API：
@@ -146,6 +164,170 @@ go build -o bin/client examples/client.go
 - 按服务名查询
 - 按日志级别查询
 - 按 trace_id 查询
+
+## 🚀 多语言客户端
+
+项目提供了多种编程语言的客户端实现，方便不同技术栈的项目集成。
+
+### 🐍 Python 客户端
+
+**特性**: 基础 gRPC 客户端，支持同步调用
+
+```bash
+# 快速启动
+cd clients/python
+./setup_and_run.sh
+
+# 手动安装和测试
+pip install -r requirements.txt
+python client.py
+```
+
+**使用示例**:
+```python
+from client import LogServiceClient
+
+client = LogServiceClient()
+client.connect()
+
+# 写入日志
+result = client.write_log(
+    service_name="python-service",
+    level=log_service_pb2.LogLevel.INFO,
+    message="Python客户端测试日志"
+)
+```
+
+### 🌐 Django 客户端 (🆕 推荐)
+
+**特性**: 
+- 🔧 **封装的 write_log 函数**: 简化的日志写入接口
+- 🚀 **高并发支持**: 支持1万次并发日志写入测试
+- 🌐 **RESTful API**: 完整的 HTTP API 接口
+- 🧵 **线程安全**: 单例模式的 gRPC 客户端
+- 📊 **性能监控**: 内置性能统计和错误报告
+
+```bash
+# 快速启动 Django 服务
+cd clients/django
+./setup_and_run.sh
+
+# 服务将在 http://127.0.0.1:8000 启动
+```
+
+**核心功能 - write_log 函数**:
+```python
+from log_client.client import write_log
+
+# 简化的日志写入 - 自动参数分类
+result = write_log(
+    "用户点击广告",                    # message (位置参数)
+    service_name="ad-service",         # gRPC 参数
+    level="INFO",                      # gRPC 参数  
+    trace_id="trace-12345",           # gRPC 参数
+    span_id="span-67890",             # gRPC 参数
+    # 以下参数自动放入 metadata ⬇️
+    adv_id=1234567,                   # 广告ID
+    aweme_id=987654321,               # 视频ID
+    plan_id=12345,                    # 计划ID
+    monitor_type="click",             # 监控类型
+    co_id=5678,                       # 公司ID
+    custom_field="any_value"          # 任意自定义字段
+)
+```
+
+**RESTful API 接口**:
+
+1. **单条日志写入**
+```bash
+curl -X POST http://127.0.0.1:8000/api/write_log/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "API测试日志",
+    "adv_id": 123456,
+    "monitor_type": "impression",
+    "co_id": 5678
+  }'
+```
+
+2. **批量写入测试**
+```bash
+curl -X POST http://127.0.0.1:8000/api/batch_write_test/ \
+  -H "Content-Type: application/json" \
+  -d '{"count": 1000}'
+```
+
+3. **并发写入测试 (1万次)**
+```bash
+curl -X POST http://127.0.0.1:8000/api/concurrent_test/ \
+  -H "Content-Type: application/json" \
+  -d '{"count": 10000, "max_workers": 50}'
+```
+
+**测试工具**:
+```bash
+# HTTP API 完整测试
+./test_client.py
+
+# 直接函数测试 (不依赖 HTTP 服务)
+./direct_test.py
+
+# 验证项目结构
+./verify-setup.sh
+```
+
+**性能特性**:
+- **单线程**: ~200 logs/second
+- **多线程 (20 workers)**: ~500-800 logs/second  
+- **多线程 (50 workers)**: ~800-1200 logs/second
+
+### 📜 TypeScript 客户端
+
+**特性**: 现代化的 TypeScript 客户端，支持 Promise 和类型安全
+
+```bash
+# 快速启动
+cd clients/typescript
+./setup_and_run.sh
+
+# 手动安装和测试
+npm install
+npm run test
+```
+
+**使用示例**:
+```typescript
+import { LogServiceClient } from './client';
+
+const client = new LogServiceClient('localhost:50051');
+
+// 写入日志
+const result = await client.writeLog({
+  serviceName: 'ts-service',
+  level: LogLevel.INFO,
+  message: 'TypeScript客户端测试日志'
+});
+```
+
+### 🔧 客户端对比
+
+| 特性 | Python | Django | TypeScript |
+|------|--------|--------|------------|
+| 基础 gRPC 调用 | ✅ | ✅ | ✅ |
+| 简化接口 | ❌ | ✅ | ✅ |
+| HTTP API | ❌ | ✅ | ❌ |
+| 并发测试 | ❌ | ✅ | ❌ |
+| 参数自动分类 | ❌ | ✅ | ❌ |
+| 性能监控 | ❌ | ✅ | ❌ |
+| 线程安全 | ❌ | ✅ | ✅ |
+
+### 🎯 使用建议
+
+- **快速原型**: 使用 Python 客户端
+- **生产环境**: 推荐使用 Django 客户端
+- **Web 集成**: 使用 Django 的 HTTP API
+- **前端应用**: 使用 TypeScript 客户端
+- **性能测试**: 使用 Django 的并发测试功能
 
 ## 🎨 Web 管理界面功能详解
 
@@ -288,7 +470,32 @@ admin:
 │   └── performance_test.go     # 性能测试
 ├── clients/                     # 多语言客户端
 │   ├── python/                 # Python客户端
+│   │   ├── client.py          # 基础gRPC客户端
+│   │   ├── log_service_pb2.py # Protobuf生成文件
+│   │   ├── requirements.txt   # Python依赖
+│   │   └── setup_and_run.sh   # 安装运行脚本
+│   ├── django/                 # 🆕 Django客户端 (推荐)
+│   │   ├── manage.py          # Django管理脚本
+│   │   ├── requirements.txt   # Python依赖
+│   │   ├── setup_and_run.sh   # 一键启动脚本
+│   │   ├── test_client.py     # HTTP API测试工具
+│   │   ├── direct_test.py     # 直接函数测试
+│   │   ├── verify-setup.sh    # 项目验证脚本
+│   │   ├── README.md          # 详细使用文档
+│   │   ├── log_service_django/ # Django项目配置
+│   │   │   ├── settings.py    # Django设置
+│   │   │   ├── urls.py        # 主URL配置
+│   │   │   └── ...
+│   │   └── log_client/        # 日志客户端应用
+│   │       ├── client.py      # 封装的gRPC客户端
+│   │       ├── views.py       # API视图 (写入/测试接口)
+│   │       ├── urls.py        # URL路由
+│   │       ├── log_service_pb2.py # Protobuf文件
+│   │       └── ...
 │   └── typescript/             # TypeScript客户端
+│       ├── src/               # 源代码
+│       ├── package.json       # Node.js依赖
+│       └── setup_and_run.sh   # 安装运行脚本
 ├── scripts/                     # 脚本文件
 │   ├── init-mongo.js           # MongoDB初始化
 │   └── create-indexes.js       # 索引创建脚本
@@ -475,7 +682,8 @@ make test
 
 ## 🏷️ 版本历史
 
-- 🆕 新增Web管理界面，JWT认证系统，可视化查询
-- 添加多语言客户端支持
-- 优化批量写入性能
-- 初始版本，基础gRPC日志服务
+- 🆕 **v2.1.0** - 新增Django客户端，封装的write_log函数，1万次并发测试支持
+- 🆕 **v2.0.0** - 新增Web管理界面，JWT认证系统，可视化查询
+- **v1.2.0** - 添加多语言客户端支持 (Python, TypeScript)
+- **v1.1.0** - 优化批量写入性能，添加索引管理
+- **v1.0.0** - 初始版本，基础gRPC日志服务

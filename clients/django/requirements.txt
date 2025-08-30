@@ -1,0 +1,6 @@
+Django==4.2.7
+grpcio==1.59.3
+grpcio-tools==1.59.3
+djangorestframework==3.14.0
+protobuf>=4.21.0
+requests>=2.28.0
